@@ -24,12 +24,6 @@ type CityInfo struct {
 	WindSpeed   float64 `json:"wind_speed"`
 }
 
-type Reminder struct {
-	User    string
-	Message string
-	Timer   time.Duration
-}
-
 func readTokenFromFile(filename string) (string, error) {
 	fileContent, err := os.ReadFile(filename)
 	if err != nil {
@@ -89,11 +83,13 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if strings.HasPrefix(m.Content, "!weather") {
 		go func() {
+			// получаем широту и долготу по названию города
 			lng, lat := fetchCoordinates(m.Content[9:])
 			if lng == "" || lat == "" {
 				s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("I can't find a city with that name. Please make sure you typed the name correctly"))
 				return
 			}
+			// с полученными координатами идем в другой api за информацией о погоде
 			city, err := fetchWeather(lng, lat)
 			if err != nil {
 				log.Fatal("error fetching weather data, please try again")
@@ -119,6 +115,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			second, _ := strconv.Atoi(m.Content[16:18])
 			message := m.Content[19:]
 			untilAction := time.Duration(hour)*time.Hour + time.Duration(minute)*time.Minute + time.Duration(second)*time.Second
+			// функция запуститься через определенное время (untilAction)
 			time.AfterFunc(untilAction, func() {
 				s.ChannelMessageSend(m.ChannelID, "timer invoked with your message: "+message)
 			})
