@@ -24,6 +24,7 @@ type CityInfo struct {
 	WindSpeed   float64 `json:"wind_speed"`
 }
 
+// discord заставляет менять токен при его обнаружении на гитхаб, так же в целом безопаснее хранить токен только у себя, поэтому читаем токен с файла который есть только у вас
 func readTokenFromFile(filename string) (string, error) {
 	fileContent, err := os.ReadFile(filename)
 	if err != nil {
@@ -60,6 +61,8 @@ func main() {
 	dg.Close()
 }
 
+// основная функция для работы с сообщениями
+// все действия выполняемые внутри if - выполняются параллельно и бот работает со всеми чатами одновременно
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
 		return
