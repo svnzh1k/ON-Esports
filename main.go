@@ -30,9 +30,20 @@ type Reminder struct {
 	Timer   time.Duration
 }
 
-func main() {
-	botToken := "MTIwMjI1MjAxMDE2MzAxMTU4Ng.Gm7whD.oWJlr71GSYZSdGVlHMz6niKg1FNeREvCB1K7Dk"
+func readTokenFromFile(filename string) (string, error) {
+	fileContent, err := os.ReadFile(filename)
+	if err != nil {
+		return "", err
+	}
+	return string(fileContent), nil
+}
 
+func main() {
+	botToken, err := readTokenFromFile("token.txt")
+	if err != nil {
+		log.Fatal("error reading the file with bot's token")
+		return
+	}
 	dg, err := discordgo.New("Bot " + botToken)
 	if err != nil {
 		fmt.Println("Error creating Discord session:", err)
@@ -69,9 +80,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if m.Content == "!help" {
 		go func() {
-			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("'!help' -> see all available commands"))
-			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("'!start' -> start the bot"))
-			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("'!check [name of your city]' to see the current weather in your city"))
+			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("'!weather [name of your city]' to see the current weather in your city"))
+			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("'!define [word]' to look up a word's meaning in english"))
+			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("'!reminder [hh:mm:ss] [message] to set a timer with a message. I will remind you with the message at the specified moment"))
 		}()
 		return
 	}
@@ -116,14 +127,18 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}()
 		return
 	}
-	if strings.HasPrefix(m.Content, "!translate") {
-		content := strings.Split(m.Content, " ")
-		if len(content) > 2 {
-			s.ChannelMessageSend(m.ChannelID, "You can translate only one word at a time")
-			return
-		}
-
+	if strings.HasPrefix(m.Content, "!define ") {
+		go func() {
+			content := strings.Split(m.Content, " ")
+			if len(content) > 2 {
+				s.ChannelMessageSend(m.ChannelID, "You can translate only one word at a time")
+				return
+			}
+			s.ChannelMessageSend(m.ChannelID, defineWord(content[1]))
+		}()
+		return
 	}
+	s.ChannelMessageSend(m.ChannelID, "There is no such command. Type '!help' to see available commands")
 }
 
 func fetchCoordinates(city string) (lng string, lat string) {
@@ -150,7 +165,7 @@ func fetchCoordinates(city string) (lng string, lat string) {
 	}
 	cityInfo := string(body)
 	var arr []string = strings.Split(cityInfo, ",")
-	lat = arr[1][13:] // в json на вторых и третьих индексах находятся долгота и широта с которыми я иду в другой API для просмотра погода
+	lat = arr[1][13:] // в json на вторых и третьих индексах находятся долгота и широта с которыми я иду в другой API для просмотра погоды
 	lng = arr[2][14:]
 	return lng, lat
 }
@@ -192,7 +207,7 @@ func fetchWeather(lng, lat string) (CityInfo, error) {
 	return cityInfo, nil
 }
 
-func translateWord(word string) {
+func defineWord(word string) string {
 	apiKey := "2ydJz6WD+XG2joDa4LdGhA==mm8kWNd3mVgg5xKs"
 	url := "https://api.api-ninjas.com/v1/dictionary?word=" + word
 
@@ -210,5 +225,13 @@ func translateWord(word string) {
 
 	body, err := io.ReadAll(response.Body)
 	fmt.Print(string(body))
-
+	valid := strings.Split(string(body), "valid")[1]
+	fmt.Println(valid)
+	if strings.Contains(valid, "false") {
+		return "This is not a valid english word"
+	}
+	fmt.Print(string(body))
+	translation := strings.Split(string(body), "1.")[1]
+	translation = strings.Split(translation, ".")[0]
+	return translation
 }
