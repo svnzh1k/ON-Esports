@@ -13,7 +13,7 @@ This Discord bot provides weather information for cities and allows users to loo
 !reminder [hh:mm:ss] [message]: Set a timer with a reminder message.
 
 ## Setup
-1. Obtain a Discord bot token and replace YOUR_BOT_TOKEN with it in the main function.
+1. Obtain a Discord bot token and replace YOUR_BOT_TOKEN with it in the main function. (It is done by creating a "token.txt" file with the token inside the parent folder of the project.)
 
 2. Run the bot using go run main.go.
 
@@ -44,7 +44,7 @@ so i just used a free api that gives a definition to some words in english
 
 
 ## Настройка
-1. Получите токен бота Discord и замените YOUR_BOT_TOKEN на него в функции main.
+1. Получите токен бота Discord и замените YOUR_BOT_TOKEN на него в функции main.(Создайте файл "token.txt" с токеном внутри в корне проекта)
 
 2. Запустите бота с помощью go run main.go.
 
